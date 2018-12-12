@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.antlr.grammar.v3.ANTLRv3Parser.finallyClause_return;
 import org.apache.commons.vfs2.FileSystemException;
+import org.netlib.util.floatW;
 import org.openimaj.data.DataSource;
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.data.dataset.GroupedDataset;
@@ -81,6 +82,11 @@ public class App {
 		
 		FImage newimage = testingImages.get(3);
 		
+		float[][] pixels = newimage.pixels;
+		
+		System.out.println(pixels.length);
+		System.out.println(pixels[0].length);
+		
 		PixelSet pixelSet = new PixelSet(newimage, 0);
 		
 	
@@ -132,30 +138,30 @@ public class App {
 //		DisplayUtilities.display(minPair.secondObject(), "Testing Image");
 	}
 	
-	public static FImage squareImage(FImage image) {
-		float[][] imageMatrix = image.pixels; // 300x200
-		int difference = image.width - image.height;
-		
-		if(difference > 0) {
-			float[][] resizedImageMatrix = new float[image.height][image.height];
-			for(int i = difference/2; i < image.width - difference/2; i++) {
-				int count = 0;
-				for(int j = 0; j < image.height; j++) {
-					resizedImageMatrix[count][j] = imageMatrix[i][j];
-				}
-				count++;
-			}
-		} else if(difference < 0) {
-			float[][] resizedImageMatrix = new float[image.width][image.width];
-				for(int j = difference/2; j < image.height - difference/2; j++) {
-					int count = 0;
-					for(int i = 0; i < image.width; i++) {
-						resizedImageMatrix[i][count] = imageMatrix[i][j];
-					}
-					count++;
-			}
-		}
-			
-		return image;
-	}
+//	public static FImage squareImage(FImage image) {
+//		float[][] imageMatrix = image.pixels; // 300x200
+//		int difference = image.width - image.height;
+//		
+//		if(difference > 0) {
+//			float[][] resizedImageMatrix = new float[image.height][image.height];
+//			for(int i = difference/2; i < image.width - difference/2; i++) {
+//				int count = 0;
+//				for(int j = 0; j < image.height; j++) {
+//					resizedImageMatrix[count][j] = imageMatrix[i][j];
+//				}
+//				count++;
+//			}
+//		} else if(difference < 0) {
+//			float[][] resizedImageMatrix = new float[image.width][image.width];
+//				for(int j = difference/2; j < image.height - difference/2; j++) {
+//					int count = 0;
+//					for(int i = 0; i < image.width; i++) {
+//						resizedImageMatrix[i][count] = imageMatrix[i][j];
+//					}
+//					count++;
+//			}
+//		}
+//			
+//		return image;
+//	}
 }
