@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.sag1g15;
+package uk.ac.soton.ecs.sag1g15.run1;
 
 import java.util.Comparator;
 import java.util.HashMap;
