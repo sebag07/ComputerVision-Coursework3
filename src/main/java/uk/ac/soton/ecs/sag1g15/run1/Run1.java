@@ -1,5 +1,7 @@
 package uk.ac.soton.ecs.sag1g15.run1;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +17,8 @@ import org.openimaj.experiment.dataset.util.DatasetAdaptors;
 import org.openimaj.image.FImage;
 import org.openimaj.image.ImageUtilities;
 
+import uk.ac.soton.ecs.sag1g15.KnnClassifier;
+
 
 /**
  * OpenIMAJ Hello world!
@@ -23,7 +27,10 @@ import org.openimaj.image.ImageUtilities;
 public class Run1 {
 
 	public static void main(String[] args) throws FileSystemException {
-
+		writeFile();
+	}
+	
+	public static void writeFile() throws FileSystemException {
 		VFSListDataset<FImage> testing = new VFSListDataset<>("C:\\Users\\tzica\\Coursework3\\testing", ImageUtilities.FIMAGE_READER);
 		
 		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>("C:\\Users\\tzica\\Coursework3\\training", ImageUtilities.FIMAGE_READER);
@@ -40,24 +47,17 @@ public class Run1 {
 		
 		classifier.train(training);
 		
+		BufferedWriter writer = null;
+		try {
+			FileWriter fw = new FileWriter("run1.txt");
 			for(int i = 0; i < testing.size(); i++) {
 				FImage newimage = testingImages.get(i);
-				System.out.println(i + ".jpg " + classifier.classify(newimage, 1, featureVectors));
-				
+				System.out.println(i + ".jpg " + classifier.classify(newimage, 7, featureVectors));
+				fw.write(i + ".jpg " + classifier.classify(newimage, 7, featureVectors) + "\n");	
 			}
-			
-			LinkedHashMap<Double, String> result = new LinkedHashMap<Double, String>();
-			
-			double[] distances = new double[1499];
-			int count = 0;
-			
-			Map<Double, String> sort = new TreeMap<>(result);
-			
-			int k = 5;
-			
-			for(int j = 0; j < k; j++) {
-				String String = (new ArrayList<String>(sort.values()).get(j));
-				System.out.println(String);
-			}	
+			fw.close();
+		} catch(Exception e) {
+			System.out.println(e);
+		}
 	}
 }
