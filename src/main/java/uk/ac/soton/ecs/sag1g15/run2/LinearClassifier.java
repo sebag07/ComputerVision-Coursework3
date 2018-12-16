@@ -1,12 +1,18 @@
 package uk.ac.soton.ecs.sag1g15.run2;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.data.dataset.GroupedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.VFSListDataset;
 import org.openimaj.experiment.dataset.split.GroupedRandomSplitter;
+import org.openimaj.experiment.evaluation.classification.ClassificationEvaluator;
+import org.openimaj.experiment.evaluation.classification.ClassificationResult;
+import org.openimaj.experiment.evaluation.classification.analysers.confusionmatrix.CMAnalyser;
+import org.openimaj.experiment.evaluation.classification.analysers.confusionmatrix.CMResult;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.feature.FloatFV;
@@ -29,113 +35,112 @@ import org.openimaj.util.pair.IntFloatPair;
 
 import de.bwaldvogel.liblinear.SolverType;
 
-public class LinearClassifier {
-	
-	public int clusters = 500;
-	public int count = 0;
-	public int size = 8;
-	public int step = 4;
-	
-	
-	private LiblinearAnnotator<FImage, String> annotator;
-	
-	
-	public List<LocalFeature<SpatialLocation, FloatFV>> extract(FImage image, float step, float size){
-		
-		
-		System.out.println("Extracting patches: " + count);
-		count++;
-		ArrayList<LocalFeature<SpatialLocation, FloatFV>> featureList = new ArrayList<LocalFeature<SpatialLocation, FloatFV>>();
-		
-		RectangleSampler rectangleSampler = new RectangleSampler(image, step, step, size, size);
 
-		for(Rectangle rectangle : rectangleSampler) {
-			FImage patch = image.extractROI(rectangle);
-			
-			LocalFeature<SpatialLocation, FloatFV> localFeature = getPatchFeatures(patch, rectangle);
-			
-			featureList.add(localFeature);
-		}
+public class LinearClassifier {
+
+    public final int CLUSTERS = 500;
+    public final int vocabulary = 10;
+
+	public final int step = 4;
+	public final int size = 8;
+
+	private LiblinearAnnotator<FImage, String> annotator;
+	private GroupedRandomSplitter<String, FImage> randomSplitter;
+
+	public void train(GroupedDataset<String, ListDataset<FImage>, FImage> trainingSet) {
+
+		randomSplitter = new GroupedRandomSplitter<String, FImage>(trainingSet, vocabulary, 0, 0);
+		HardAssigner<float[], float[], IntFloatPair> hardAssigner = quantisy(randomSplitter.getTrainingDataset());
+
+		FeatureExtractor<DoubleFV, FImage> featureExtractor = new PatchFeatureExtractor(hardAssigner);
+
+		annotator = new LiblinearAnnotator<FImage, String>(featureExtractor, Mode.MULTICLASS, SolverType.L2R_L2LOSS_SVC, 1.0, 0.00001);
 		
-		return featureList;
+		System.out.println("Training started");
+		annotator.train(trainingSet); 
+		System.out.println("Training ended");
+	}
+
+
+	public ClassificationResult<String> classifyImage(FImage image) {
+		return annotator.classify(image);
 	}
 	
-	public LocalFeature<SpatialLocation, FloatFV> getPatchFeatures(FImage patch, Rectangle rectangle){
-		float[] vector = ArrayUtils.reshape(patch.pixels);
-		FloatFV featureVector = new FloatFV(vector);
-		
-		SpatialLocation spatialLocation = new SpatialLocation(rectangle.x, rectangle.y);
-		
-		return new LocalFeatureImpl<SpatialLocation, FloatFV>(spatialLocation, featureVector);	
-	}
 	
-	public HardAssigner<float[], float[], IntFloatPair> quantisy(Dataset<FImage> sample){
-		
-		System.out.println("Am intrat in HardAssigner");
-		
-		ArrayList<float[]> allkeys = new ArrayList<float[]>();
-		
-		for(FImage image : sample) {
+	public HardAssigner<float[], float[], IntFloatPair> quantisy(Dataset<FImage> sample) {
+		List<float[]> vectors = new ArrayList<float[]>();
+  
+		for (FImage image : sample) {
 			List<LocalFeature<SpatialLocation, FloatFV>> sampleList = extract(image, step, size);
-			
-			for(LocalFeature<SpatialLocation, FloatFV> localFeature : sampleList) {
-				allkeys.add(localFeature.getFeatureVector().values);
+
+			for(LocalFeature<SpatialLocation, FloatFV> localFeature : sampleList){
+				vectors.add(localFeature.getFeatureVector().values);
 			}
 		}
-		
-		FloatCentroidsResult results = generateClusters(clusters, allkeys);
-		
-		System.out.println("Clusters have been generated");
-		
-		return results.defaultHardAssigner();
-	}
-	
-	public FloatCentroidsResult generateClusters(int clusters, ArrayList<float[]> allkeys) {
-		FloatKMeans kMeans = FloatKMeans.createKDTreeEnsemble(clusters);
-		float[][] array = allkeys.toArray(new float[][] {});
-		
-		return kMeans.cluster(array);
-	}
-	
-	public void trainImages(GroupedDataset<String, VFSListDataset<FImage>, FImage> training) {
-		
-		System.out.println("Training image");
-		
-		GroupedRandomSplitter<String, FImage> randomSplitter = new GroupedRandomSplitter<String, FImage>(training, 15, 0, 0);
-		HardAssigner<float[], float[], IntFloatPair> assigner = quantisy(randomSplitter.getTrainingDataset());
-		
-		System.out.println("HardAssigner assigned");
-		
-		PatchClusterFeatureExtractor featureExtractor = new PatchClusterFeatureExtractor(assigner);
-		System.out.println("Started training...");
-		annotator = new LiblinearAnnotator<FImage, String>(featureExtractor, Mode.MULTICLASS, SolverType.L2R_L2LOSS_SVC, 1.0, 0.00001);
-		annotator.train(randomSplitter.getTrainingDataset());
-		
-		System.out.println("Images have been trained");
-	}
-	
-	public LiblinearAnnotator getAnnotator() {
-		return this.annotator;
-	}
-	
-	
-	class PatchClusterFeatureExtractor implements FeatureExtractor<DoubleFV, FImage> {
+		System.out.println("Start clustering");
+		FloatCentroidsResult result = generateClusters(vectors);
+		System.out.println("End clustering");
 
-		HardAssigner<float[], float[], IntFloatPair> assigner;
+		return result.defaultHardAssigner();
+	}
+	
+	public FloatCentroidsResult generateClusters(List<float[]> vectors) {
+		FloatKMeans km = FloatKMeans.createKDTreeEnsemble(CLUSTERS);
+        float[][] data = vectors.toArray(new float[][]{});
+        
+        return km.cluster(data);
+	}
+
+	public List<LocalFeature<SpatialLocation, FloatFV>> extract(FImage image, float step, float patch_size){
+        List<LocalFeature<SpatialLocation, FloatFV>> patchList = new ArrayList<LocalFeature<SpatialLocation, FloatFV>>();
+
+        RectangleSampler rectangleSampler = new RectangleSampler(image, step, step, patch_size, patch_size);
+
+        for(Rectangle rectangle : rectangleSampler){
+            FImage patch = image.extractROI(rectangle);
+            LocalFeature<SpatialLocation, FloatFV> lf = getFeatures(patch, rectangle);
+
+            patchList.add(lf);
+        }
+
+        return patchList;	
+	}
+	
+	public LocalFeature<SpatialLocation, FloatFV> getFeatures(FImage image, Rectangle rectangle){
+		float[] vector = ArrayUtils.reshape(image.pixels);
+        FloatFV featureVector = new FloatFV(vector);
+
+        SpatialLocation spatialLocation = new SpatialLocation(rectangle.x, rectangle.y);
+        
+        return new LocalFeatureImpl<SpatialLocation, FloatFV>(spatialLocation, featureVector);
+	}
+	
+	public void getResults(GroupedDataset<String, VFSListDataset<FImage>, FImage> training){
+
+		randomSplitter = new GroupedRandomSplitter<String, FImage>(training, 15, 0, 15);
 		
-		public PatchClusterFeatureExtractor(HardAssigner<float[], float[], IntFloatPair> assigner) {
+		ClassificationEvaluator<CMResult<String>, String, FImage> eval = 
+		new ClassificationEvaluator<CMResult<String>, String, FImage>(
+			annotator, randomSplitter.getTrainingDataset(), new CMAnalyser<FImage, String>(CMAnalyser.Strategy.SINGLE));
+			
+		Map<FImage, ClassificationResult<String>> guesses = eval.evaluate();
+		CMResult<String> result = eval.analyse(guesses);
+
+		System.out.println(result.getDetailReport());
+	}
+   
+	class PatchFeatureExtractor implements FeatureExtractor<DoubleFV, FImage> {
+		HardAssigner<float[], float[], IntFloatPair> assigner;
+
+		public PatchFeatureExtractor(HardAssigner<float[], float[], IntFloatPair> assigner) {
 			this.assigner = assigner;
 		}
-		
-		@Override
-		public DoubleFV extractFeature(FImage patch) {
-			
-			BagOfVisualWords<float[]> bagOfVisualWords = new BagOfVisualWords<float[]>(assigner);
-			
-			BlockSpatialAggregator<float[], SparseIntFV> spatialAggregator = new BlockSpatialAggregator<float[], SparseIntFV>(bagOfVisualWords, 2, 2);
-			
-			return spatialAggregator.aggregate(extract(patch, step, size), patch.getBounds()).normaliseFV();
+
+		public DoubleFV extractFeature(FImage image) {
+			BagOfVisualWords<float[]> bovw = new BagOfVisualWords<float[]>(assigner);
+			BlockSpatialAggregator<float[], SparseIntFV> spatial = new BlockSpatialAggregator<float[], SparseIntFV>(bovw, 2, 2);
+			return spatial.aggregate(extract(image, step, size), image.getBounds()).normaliseFV();
 		}
-		
 	}
+
 }
