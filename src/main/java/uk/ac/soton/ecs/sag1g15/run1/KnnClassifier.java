@@ -61,7 +61,9 @@ public class KnnClassifier {
 		DoubleFVComparison comparator = DoubleFVComparison.EUCLIDEAN;
 		annotator = KNNAnnotator.create(vectorExtractor, comparator, k);
 		
+		System.out.println("Trainig started");
 		annotator.train(training);
+		System.out.println("Training ended");
 	}
 	
 	/*
