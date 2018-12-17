@@ -41,9 +41,9 @@ import org.openimaj.util.pair.IntFloatPair;
 public class NaiveBayesClassifier {
 	
 	private NaiveBayesAnnotator<FImage, String> ann;
-	GroupedDataset<String, ListDataset<FImage>, FImage> data;
-	GroupedRandomSplitter<String, FImage> splits;
-	
+	private GroupedDataset<String, ListDataset<FImage>, FImage> data;
+	private GroupedRandomSplitter<String, FImage> splits;
+	private final int clusters = 300;
 	
 	public void train(GroupedDataset<String, VFSListDataset<FImage>, FImage> training) throws FileSystemException {
 		
@@ -107,7 +107,7 @@ public class NaiveBayesClassifier {
 			 allkeys = allkeys.subList(0, 10000);
 		 }
 		 
-		 ByteKMeans kMeans = ByteKMeans.createKDTreeEnsemble(600);
+		 ByteKMeans kMeans = ByteKMeans.createKDTreeEnsemble(clusters);
 		 DataSource<byte[]> datasource = new LocalFeatureListDataSource<ByteDSIFTKeypoint, byte[]>(allkeys);
 		 System.out.println("Clustering has started");
 		 ByteCentroidsResult result = kMeans.cluster(datasource);

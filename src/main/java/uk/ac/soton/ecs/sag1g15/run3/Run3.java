@@ -56,9 +56,11 @@ public class Run3 {
 	
 	public static void main(String[] args) throws Exception {
 		
-		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>("C:\\Users\\tzica\\Coursework3\\training", ImageUtilities.FIMAGE_READER);
+		File trainingFile = new File("./training/");
+		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>(trainingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
-		VFSListDataset<FImage> testing = new VFSListDataset<>("C:\\Users\\tzica\\Coursework3\\testing", ImageUtilities.FIMAGE_READER);
+		File testingFile = new File("./testing/");
+		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
 		NaiveBayesClassifier bayesClassifier = new NaiveBayesClassifier();
 		
@@ -67,6 +69,8 @@ public class Run3 {
 		TreeMap<Integer, String> predictedclasses = new TreeMap<Integer, String>();
 		
 		printPredictedResults(testing, bayesClassifier, predictedclasses);
+		
+		writeToFile(predictedclasses);
 		
 		bayesClassifier.getResults(training);
 	}
