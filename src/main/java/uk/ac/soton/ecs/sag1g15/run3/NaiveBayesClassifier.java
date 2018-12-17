@@ -48,7 +48,7 @@ public class NaiveBayesClassifier {
 	public void train(GroupedDataset<String, VFSListDataset<FImage>, FImage> training) throws FileSystemException {
 		
 		
-		data = GroupSampler.sample(training, 5, false);
+		data = GroupSampler.sample(training, training.size(), false);
 
 		splits = new GroupedRandomSplitter<String, FImage>(data, 15, 0, 0);
 		

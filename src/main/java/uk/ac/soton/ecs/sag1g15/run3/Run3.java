@@ -62,6 +62,7 @@ public class Run3 {
 		File testingFile = new File("./testing/");
 		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
+		System.out.println(training.size());
 		NaiveBayesClassifier bayesClassifier = new NaiveBayesClassifier();
 		
 		bayesClassifier.train(training);
@@ -70,7 +71,7 @@ public class Run3 {
 		
 		printPredictedResults(testing, bayesClassifier, predictedclasses);
 		
-		writeToFile(predictedclasses);
+		writeToFile(predictedclasses); 
 		
 		bayesClassifier.getResults(training);
 	}
