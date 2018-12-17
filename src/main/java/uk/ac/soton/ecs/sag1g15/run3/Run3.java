@@ -52,17 +52,23 @@ import eu.larkc.csparql.parser.CSparqlParser.sourceSelector_return;
 import eu.larkc.csparql.parser.CSparqlParser.string_return;
 import uk.ac.soton.ecs.sag1g15.run2.LinearClassifier;
 
+/*
+ * Class Run2 which contains the main method used to run our NaiveBayesClassifier
+ * Has a writeToFile method and a printPreditedResults method.
+ */
+
 public class Run3 {
 	
 	public static void main(String[] args) throws Exception {
-		
+		//Reading testing files
+		File testingFile = new File("./testing/");
+		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
+				
+		//Reading training files
 		File trainingFile = new File("./training/");
 		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>(trainingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
-		File testingFile = new File("./testing/");
-		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
-		
-		System.out.println(training.size());
+		//Creating classifier
 		NaiveBayesClassifier bayesClassifier = new NaiveBayesClassifier();
 		
 		bayesClassifier.train(training);
@@ -75,6 +81,12 @@ public class Run3 {
 		
 		bayesClassifier.getResults(training);
 	}
+	
+	/*
+	 * Prints the output of the classifier to System.out. Takes our testing set,
+	 * the classifier and the TreeMap as a parameter. The TreeMap is used in the 
+	 * writeToFile function to write the output to the txt file. 
+	 */
 	
 	public static void printPredictedResults(VFSListDataset<FImage> testing, NaiveBayesClassifier bayesClassifier, TreeMap<Integer, String> predictedclasses) {
 		System.out.println("Classifying images");
@@ -93,6 +105,11 @@ public class Run3 {
 		
 		System.out.println("Classifying done");
 	}
+	
+	/*
+	 * Function that writes the output to run3.txt. Has a TreeMap has a parameter
+	 * which stores the name of the image and the predicted class.
+	 */
 	
 	public static void writeToFile(TreeMap<Integer, String> predictedclasses) {
 		try {

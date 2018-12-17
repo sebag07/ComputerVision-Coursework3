@@ -18,18 +18,26 @@ import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.FImage;
 import org.openimaj.image.ImageUtilities;
 
+/*
+ * Class Run2 which contains the main method used to run our LinearClassifier
+ * Has a writeToFile method and a printPreditedResults method.
+ */
+
 public class Run2 {
 
 	public static void main(String[] args) throws FileSystemException {
-		LinearClassifier linearClassifier = new LinearClassifier();
-		
+		//Reading test files
 		File testingFile = new File("./testing/");
 		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 
+		//Reading training files
 		File trainingFile = new File("./training/");
 		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>(trainingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
 		GroupedDataset<String, ListDataset<FImage>, FImage> data = GroupSampler.sample(training, training.size(), false);
+		
+		//Creating classifier
+		LinearClassifier linearClassifier = new LinearClassifier();
 		
 		linearClassifier.train(data);
 		
@@ -42,6 +50,12 @@ public class Run2 {
 		linearClassifier.getResults(training);
 		
 	}
+	
+	/*
+	 * Prints the output of the classifier to System.out. Takes our testing set,
+	 * the classifier and the TreeMap as a parameter. The TreeMap is used in the 
+	 * writeToFile function to write the output to the txt file. 
+	 */
 	
 	public static void printPredictedResults(VFSListDataset<FImage> testing, LinearClassifier linearClassifier, TreeMap<Integer, String> predictedclasses) {
 		System.out.println("Classifying images");
@@ -61,6 +75,10 @@ public class Run2 {
 		System.out.println("Classifying done");
 	}
 	
+	/*
+	 * Function that writes the output to run2.txt. Has a TreeMap has a parameter
+	 * which stores the name of the image and the predicted class.
+	 */
 	public static void writeToFile(TreeMap<Integer, String> predictedclasses) {
 		try {
 			FileWriter fw = new FileWriter("run2.txt");

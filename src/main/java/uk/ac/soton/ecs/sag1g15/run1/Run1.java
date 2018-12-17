@@ -23,24 +23,24 @@ import org.openimaj.image.ImageUtilities;
 
 import info.bliki.wiki.filter.StringPair;
 
-
-/**
- * OpenIMAJ Hello world!
- *
+/*
+ * Class Run1 which contains the main method used to run our KNNClassifier
+ * Has a writeToFile method and a printPreditedResults method.
  */
 public class Run1 {
 	
 	public static void main(String[] args) throws FileSystemException {
+		//Reading test files
 		File testingFile = new File("./testing/");
 		VFSListDataset<FImage> testing = new VFSListDataset<>(testingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
+		//Reading trainig files
 		File trainingFile = new File("./training/");
 		GroupedDataset<String, VFSListDataset<FImage>, FImage> training = new VFSGroupDataset<>(trainingFile.getAbsolutePath(), ImageUtilities.FIMAGE_READER);
 		
+		//Creating classifier
 		KnnClassifier classifier = new KnnClassifier(15);
-//		
-//		LinkedHashMap<double[], String> featureVectors = classifier.train(training);
-//		
+
 		classifier.train(training);
 		
 		TreeMap<Integer, String> predictedclasses = new TreeMap<Integer, String>();
@@ -52,6 +52,10 @@ public class Run1 {
 		classifier.getResults(training);
 	}
 	
+	/*
+	 * Function that writes the output to run1.txt. Has a TreeMap has a parameter
+	 * which stores the name of the image and the predicted class.
+	 */
 	public static void writeToFile(TreeMap<Integer, String> predictedclasses) {
 		try {
 			FileWriter fw = new FileWriter("run1.txt");
@@ -66,6 +70,11 @@ public class Run1 {
 		}
 	}
 	
+	/*
+	 * Prints the output of the classifier to System.out. Takes our testing set,
+	 * the classifier and the TreeMap as a parameter. The TreeMap is used in the 
+	 * writeToFile function to write the output to the txt file. 
+	 */
 	public static void printPredictedClasses(VFSListDataset<FImage> testing, KnnClassifier classifier, TreeMap<Integer, String> predictedclasses) {
 		System.out.println("Classifying images");
 		
